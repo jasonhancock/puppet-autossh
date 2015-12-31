@@ -6,9 +6,8 @@
 #
 # === Variables
 #
-# $autossh_version: The install version for the autossh package
-# $autossh_build: The build number for the autossh package
 # $user: The user account to be used to run autossh processes.
+# $home: The user's home directory.
 # $enable: enable/disable package support.
 # $autossh_package: The package to be installed for autossh support.
 # $pubkey: default pubkey.. not all that useful really.
@@ -39,9 +38,10 @@
 # Copyright 2014 Jason Ball.
 #
 class autossh::params {
-  $autossh_version = '1.4d'
-  $autossh_build    = 4
+  $package_name     = 'autossh'
+  $package_ensure   = 'installed'
   $user             = 'autossh'
+  $home             = "/home/${user}"
   $enable           = true
   $pubkey           = ''
   $tunnel_type      = 'forward'
@@ -51,7 +51,7 @@ class autossh::params {
   $forward_host     = 'localhost'
   $monitor_port     = '0'
   $ssh_reuse_established_connections = false  ## Requires openssh > v5.5
-  $ssh_enable_compression = false ## Not really useful for local connections 
+  $ssh_enable_compression = false ## Not really useful for local connections
   $ssh_ciphers =
     'blowfish-cbc,aes128-cbc,3des-cbc,cast128-cbc,arcfour,aes192-cbc,aes256-cbc,aes128-ctr,aes192-ctr,aes256-ctr'
   $ssh_stricthostkeychecking = false
@@ -62,23 +62,18 @@ class autossh::params {
     /RedHat/: {
       case $::operatingsystemmajrelease {
         /5|6/: {
-          $autossh_package =
-            "autossh-${autossh_version}-${autossh_build}.el6.x86_64.rpm"
           $init_template = 'autossh.init.sysv.erb'
         }
         /7/: {
-          $autossh_package =
-            "autossh-${autossh_version}-${autossh_build}.el7.centos.x86_64.rpm"
           $init_template = 'autossh.init.systemd.erb'
         }
         default: {
           fail("Error - Unsupported OS Version: ${::operatingsystemrelease}")
         }
-      } # $::operatingsystemmajrelease  
+      } # $::operatingsystemmajrelease
     } # RedHat
 
     /Debian/: {
-          $autossh_package = 'autossh'
           $init_template = 'autossh.init.systemd.erb'
     }
 

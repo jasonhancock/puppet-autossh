@@ -62,7 +62,8 @@ define autossh::tunnel(
   $remote_ssh_user  = $autossh::params::remote_ssh_user,
   $bind             = $autossh::params::bind,
   $forward_host     = $autossh::params::forward_host,
-  $user             = $autossh::params::user,
+  $user             = $autossh::user,
+  $home             = $autossh::home,
   $tunnel_type      = $autossh::params::tunnel_type,
   $remote_ssh_port  = $autossh::params::remote_ssh_port,
   $monitor_port     = $autossh::params::monitor_port,
@@ -156,7 +157,7 @@ define autossh::tunnel(
     if ! defined(Concat::Fragment["home_${user}_ssh_config_${remote_ssh_host}"])
     {
       concat::fragment { "home_${user}_ssh_config_${remote_ssh_host}":
-        target  => "/home/${user}/.ssh/config",
+        target  => "${home}/.ssh/config",
         content => template('autossh/config.erb'),
         order   => 1,
       }

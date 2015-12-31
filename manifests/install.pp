@@ -1,8 +1,8 @@
 # == Class: autossh::install
 #
-# This class initilises the runtime environment for the autossh package and 
+# This class initilises the runtime environment for the autossh package and
 # should not be called directly as it is called from the class initialiser.
-# 
+#
 # === Parameters
 #
 # === Variables
@@ -22,13 +22,15 @@
 #
 class autossh::install {
   $user                   = $autossh::user
-  $autossh_package        = $autossh::autossh_package
+  $package_ensure         = $autossh::pakage_ensure
+  $package_name           = $autossh::package_name
   $ssh_reuse_established_connections =
     $autossh::ssh_reuse_established_connections
   $ssh_enable_compression = $autossh::ssh_enable_compression
   $ssh_ciphers            = $autossh::ssh_ciphers
   $ssh_stricthostkeychecking = $autossh::ssh_stricthostkeychecking
   $ssh_tcpkeepalives = $autossh::ssh_tcpkeepalives
+  $home              = $autossh::home
 
   ## If the target user account doesn't exist, create it...
   if ! defined(User[$user]) {
@@ -39,13 +41,15 @@ class autossh::install {
     }
   }
 
-  file { "/home/${user}/.ssh":
-    ensure => directory,
-    owner  => $user,
-    group  => $user,
-    mode   => '0700'
+  if ! defined(File["${home}/.ssh"]) {
+    file { "${home}/.ssh":
+      ensure => directory,
+      owner  => $user,
+      group  => $user,
+      mode   => '0700'
+    }
   }
-        
+
 
   if !defined(File['auto_ssh_conf_dir']) {
     file{'auto_ssh_conf_dir':
@@ -59,7 +63,6 @@ class autossh::install {
 
   case $::osfamily {
     /RedHat/: {
-
       # redhat-lsb-core is not supporte on rhel 7...
       case $::operatingsystemmajrelease {
         /6/: {
@@ -88,37 +91,18 @@ class autossh::install {
       if(!defined(Package['openssh-clients'])) {
         package{'openssh-clients': ensure => installed }
       }
-
-      file { "/var/tmp/${autossh_package}":
-        ensure  => file,
-        source  => "puppet:///modules/autossh/${autossh_package}",
-        owner   => root,
-        group   => root,
-        mode    => '0600',
-        replace => yes,
-      }
-      package{'autossh':
-        ensure   => installed,
-        provider => 'rpm',
-        source   => "/var/tmp/${autossh_package}",
-        require  => [File["/var/tmp/${autossh_package}"]],
-      }
     } #case RedHat
-
-    /Debian/: {
-      package{ $autossh_package: ensure => installed }
-    } # Debian
-    
-    default: {
-      fail("Unsupported OS Family: ${::osfamily}")
-    }
   } #case
 
+  package { $package_name:
+    ensure => $package_ensure,
+  }
 
-  ## Configure reuse of established connections. 
+
+  ## Configure reuse of established connections.
   ## Nice but little known feature of ssh.
   if $ssh_reuse_established_connections {
-    file { "/home/${user}/.ssh/sockets":
+    file { "${home}/.ssh/sockets":
       ensure => directory,
       owner  => $user,
       group  => $user,
@@ -129,7 +113,7 @@ class autossh::install {
   ##
   ## ssh config file
   ##
-  concat {"/home/${user}/.ssh/config":
+  concat { "${home}/.ssh/config":
     owner => $user,
     group => $user,
     mode  => '0600',
@@ -140,10 +124,8 @@ class autossh::install {
   ##
   $remote_ssh_host = '*'
   concat::fragment { "home_${user}_ssh_config_global":
-    target  => "/home/${user}/.ssh/config",
+    target  => "${home}/.ssh/config",
     content => template('autossh/config.erb'),
     order   => 10,
   }
-
-
 }
