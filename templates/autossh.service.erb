@@ -6,7 +6,7 @@ After="network.service"
 TimeoutStopSec=3
 ExecStart=/etc/autossh/autossh-tunnel.sh start <%= @tun_name %>
 PIDFile=/var/run/autossh-<%= @tun_name %>
-KillSignal=9
+KillMode=control-group
 Restart=always
 RestartSec=10
 
